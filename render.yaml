@@ -4,7 +4,7 @@ services:
     name: kotqr-web
     env: node
     plan: free
-    buildCommand: "npm install && npx prisma db push --skip-generate && npm run build"
+    buildCommand: "npm install && npx prisma db push --force-reset --accept-data-loss && node prisma/seed.js && npm run build"
     startCommand: "npm run start"
     envVars:
       - key: NODE_ENV
