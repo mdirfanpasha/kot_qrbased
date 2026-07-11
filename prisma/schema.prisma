@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Restaurant {
+  id          String     @id @default(uuid())
+  name        String
+  tagline     String     @default("Skip the Queue. Order. Pay. Auto Print.")
+  logoUrl     String?
+  upiId       String     @default("merchant@upi")
+  currency    String     @default("INR")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  categories  Category[]
+  menuItems   MenuItem[]
+  orders      Order[]
+}
+
+model Category {
+  id           String     @id @default(uuid())
+  name         String
+  sortOrder    Int        @default(0)
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  menuItems    MenuItem[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([restaurantId])
+}
+
+model MenuItem {
+  id           String      @id @default(uuid())
+  name         String
+  description  String?
+  price        Float
+  imageUrl     String?
+  isAvailable  Boolean     @default(true)
+  categoryId   String
+  category     Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  restaurantId String
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orderItems   OrderItem[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([categoryId])
+  @@index([restaurantId])
+}
+
+model Order {
+  id            String      @id @default(uuid())
+  restaurantId  String
+  restaurant    Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  tokenNumber   String      // Sequential daily or incremental token (e.g., "101", "102")
+  customerName  String?
+  totalAmount   Float
+  paymentMethod String      // "UPI" or "CASH"
+  paymentStatus String      // "PENDING", "COMPLETED", "FAILED"
+  orderStatus   String      // "AWAITING_PAYMENT", "PREPARING", "COMPLETED", "CANCELLED"
+  printStatus   String      @default("PENDING") // "PENDING", "PRINTED", "FAILED"
+  printAttempts Int         @default(0)
+  items         OrderItem[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([restaurantId])
+}
+
+model OrderItem {
+  id         String   @id @default(uuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  quantity   Int
+  price      Float    // Snapshot of price at time of order
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([menuItemId])
+}
